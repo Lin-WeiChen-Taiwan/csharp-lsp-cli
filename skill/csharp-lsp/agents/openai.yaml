@@ -1,0 +1,4 @@
+interface:
+  display_name: "C# LSP"
+  short_description: "Query C# projects through LSP"
+  default_prompt: "Use $csharp-lsp to inspect C# definitions, references, hover text, symbols, and diagnostics."

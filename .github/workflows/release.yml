@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish GitHub release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build release output
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+
+      - name: Pack npm tarball
+        id: pack
+        run: |
+          mkdir -p release
+          npm pack --json --pack-destination release > release/pack.json
+          TARBALL="$(node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('release/pack.json','utf8')); process.stdout.write(p[0].filename)")"
+          echo "tarball=release/${TARBALL}" >> "$GITHUB_OUTPUT"
+
+      - name: Smoke install from tarball
+        run: |
+          SMOKE_DIR="$(mktemp -d)"
+          npm install --prefix "$SMOKE_DIR" "${{ steps.pack.outputs.tarball }}"
+          "$SMOKE_DIR/node_modules/.bin/csharp-lsp-cli" --version
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" "${{ steps.pack.outputs.tarball }}" \
+            --verify-tag \
+            --title "${GITHUB_REF_NAME}" \
+            --generate-notes
