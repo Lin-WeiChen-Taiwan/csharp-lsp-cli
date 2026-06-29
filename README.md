@@ -64,13 +64,15 @@ Releases are built only by GitHub Actions when a tag matching `v*` is pushed.
 `dist/` is generated in the workflow and is not committed.
 
 ```sh
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.1.1
+git push origin v0.1.1
 ```
 
-The workflow uploads the npm tarball to the GitHub Release. Install from that
-tarball instead of the npm registry:
+The workflow uploads both the versioned npm tarball and a stable latest asset.
+Install from the stable latest URL instead of the npm registry:
 
 ```sh
-npm install https://github.com/Lin-WeiChen-Taiwan/csharp-lsp-cli/releases/download/v0.1.0/csharp-lsp-cli-0.1.0.tgz
+npm install https://github.com/Lin-WeiChen-Taiwan/csharp-lsp-cli/releases/latest/download/csharp-lsp-cli.tgz
 ```
+
+Use the versioned asset when you need a reproducible install.

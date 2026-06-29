@@ -6,6 +6,9 @@ import { describe, expect, it } from "vitest";
 
 const hasDist = fs.existsSync(path.resolve("dist/cli.js"));
 const maybeDescribe = hasDist ? describe : describe.skip;
+const packageJson = JSON.parse(fs.readFileSync(path.resolve("package.json"), "utf8")) as {
+  version: string;
+};
 
 maybeDescribe("release tarball", () => {
   it("packs only published files and installs the bin", () => {
@@ -39,7 +42,7 @@ maybeDescribe("release tarball", () => {
     expect(JSON.parse(version.stdout)).toMatchObject({
       version: 1,
       ok: true,
-      result: { version: "0.1.0" }
+      result: { version: packageJson.version }
     });
   });
 });

@@ -39,19 +39,24 @@ jobs:
           mkdir -p release
           npm pack --json --pack-destination release > release/pack.json
           TARBALL="$(node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('release/pack.json','utf8')); process.stdout.write(p[0].filename)")"
+          FIXED_TARBALL="./release/csharp-lsp-cli.tgz"
+          cp "./release/${TARBALL}" "${FIXED_TARBALL}"
           echo "tarball=./release/${TARBALL}" >> "$GITHUB_OUTPUT"
+          echo "fixed_tarball=${FIXED_TARBALL}" >> "$GITHUB_OUTPUT"
 
       - name: Smoke install from tarball
         run: |
           SMOKE_DIR="$(mktemp -d)"
-          npm install --prefix "$SMOKE_DIR" "${{ steps.pack.outputs.tarball }}"
+          npm install --prefix "$SMOKE_DIR" "${{ steps.pack.outputs.fixed_tarball }}"
           "$SMOKE_DIR/node_modules/.bin/csharp-lsp-cli" --version
 
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" "${{ steps.pack.outputs.tarball }}" \
+          gh release create "${GITHUB_REF_NAME}" \
+            "${{ steps.pack.outputs.tarball }}" \
+            "${{ steps.pack.outputs.fixed_tarball }}" \
             --verify-tag \
             --title "${GITHUB_REF_NAME}" \
             --generate-notes
