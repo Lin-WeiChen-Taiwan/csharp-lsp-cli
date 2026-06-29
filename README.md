@@ -69,10 +69,20 @@ git push origin v0.1.1
 ```
 
 The workflow uploads both the versioned npm tarball and a stable latest asset.
-Install from the stable latest URL instead of the npm registry:
+Install it globally from the stable latest URL instead of the npm registry:
 
 ```sh
-npm install https://github.com/Lin-WeiChen-Taiwan/csharp-lsp-cli/releases/latest/download/csharp-lsp-cli.tgz
+npm install -g https://github.com/Lin-WeiChen-Taiwan/csharp-lsp-cli/releases/latest/download/csharp-lsp-cli.tgz
+```
+
+Then verify the command is on PATH:
+
+```sh
+csharp-lsp-cli --version
 ```
 
 Use the versioned asset when you need a reproducible install.
+
+Avoid running a local `npm install` from protected directories such as
+`C:\Windows\System32`; npm will try to write `package-lock.json` in the current
+directory.
