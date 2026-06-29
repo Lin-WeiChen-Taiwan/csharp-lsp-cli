@@ -47,6 +47,19 @@ Typical request fields:
 }
 ```
 
+For repos with multiple `.sln` files, pass `solution` to force OmniSharp to load
+one solution. The path may be absolute or workspace-relative:
+
+```json
+{
+  "lspServerKind": "omnisharp",
+  "solution": "LegacyApp.sln"
+}
+```
+
+The CLI adds `-s <solution>` to the OmniSharp command line. If `solution` is
+present without `lspServerKind`, the CLI infers `omnisharp`.
+
 Legacy .NET Framework projects on Windows usually need .NET Framework runtime
 and Visual Studio Build Tools/MSBuild. On macOS/Linux, legacy projects may need
 Mono with MSBuild.

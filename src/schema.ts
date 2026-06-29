@@ -30,6 +30,7 @@ export const requestSchema = z
     character: z.number().int().positive().optional(),
     query: z.string().optional(),
     includeDeclaration: z.boolean().optional(),
+    solution: z.string().min(1).optional(),
     lspServerPath: z.string().min(1).optional(),
     lspServerArgs: z.array(z.string()).optional(),
     lspServerKind: z.enum(lspServerKinds).optional(),

@@ -18,6 +18,20 @@ describe("request schema", () => {
     expect(request.line).toBe(10);
   });
 
+  it("accepts an OmniSharp solution request", () => {
+    const request = parseRequest(
+      JSON.stringify({
+        version: 1,
+        operation: "status",
+        lspServerKind: "omnisharp",
+        solution: "App.sln"
+      })
+    );
+
+    expect(request.lspServerKind).toBe("omnisharp");
+    expect(request.solution).toBe("App.sln");
+  });
+
   it("rejects unknown fields", () => {
     expect(() =>
       parseRequest(

@@ -55,6 +55,19 @@ Default to `csharp-ls`. Override only when project requirements make it useful:
 }
 ```
 
+For OmniSharp on a workspace with multiple solution files, specify the exact
+solution:
+
+```json
+{
+  "version": 1,
+  "operation": "status",
+  "workspace": "C:/repo/app",
+  "lspServerKind": "omnisharp",
+  "solution": "App.sln"
+}
+```
+
 Read `references/csharp-server-selection.md` before changing server defaults,
 working on legacy .NET Framework projects, or troubleshooting server startup.
 

@@ -43,6 +43,21 @@ Useful presets:
 - `roslyn`: official Roslyn LSP style invocation with `--stdio --autoLoadProjects`.
 - `omnisharp`: legacy fallback using `--languageserver`.
 
+For workspaces with multiple solutions, load one solution with OmniSharp by
+passing `solution`. The path can be absolute or workspace-relative:
+
+```json
+{
+  "version": 1,
+  "operation": "status",
+  "workspace": "C:/repo/app",
+  "lspServerKind": "omnisharp",
+  "solution": "App.sln"
+}
+```
+
+The OmniSharp preset starts the server with `--languageserver -s <solution>`.
+
 ## Request operations
 
 Supported operations are `definition`, `references`, `hover`,
@@ -64,8 +79,8 @@ Releases are built only by GitHub Actions when a tag matching `v*` is pushed.
 `dist/` is generated in the workflow and is not committed.
 
 ```sh
-git tag v0.1.1
-git push origin v0.1.1
+git tag vX.Y.Z
+git push origin vX.Y.Z
 ```
 
 The workflow uploads both the versioned npm tarball and a stable latest asset.

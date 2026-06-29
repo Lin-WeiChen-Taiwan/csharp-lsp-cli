@@ -38,4 +38,34 @@ describe("session hash", () => {
 
     expect(a.hash).not.toBe(b.hash);
   });
+
+  it("changes when the OmniSharp solution changes", () => {
+    const workspace = "C:/repo/project";
+    const a = createSessionConfig(
+      workspace,
+      resolveServerConfig(
+        {
+          version: 1,
+          operation: "status",
+          lspServerKind: "omnisharp",
+          solution: "A.sln"
+        },
+        workspace
+      )
+    );
+    const b = createSessionConfig(
+      workspace,
+      resolveServerConfig(
+        {
+          version: 1,
+          operation: "status",
+          lspServerKind: "omnisharp",
+          solution: "B.sln"
+        },
+        workspace
+      )
+    );
+
+    expect(a.hash).not.toBe(b.hash);
+  });
 });

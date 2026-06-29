@@ -3,12 +3,14 @@ import os from "node:os";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import type { LspCliRequest, LspServerKind } from "./schema.js";
+import { CliError } from "./errors.js";
 
 export interface ResolvedServerConfig {
   kind: LspServerKind;
   command: string;
   args: string[];
   resolvedCommand: string;
+  solution?: string;
 }
 
 export interface SessionConfig {
@@ -17,20 +19,35 @@ export interface SessionConfig {
   server: ResolvedServerConfig;
 }
 
-export function resolveServerConfig(request: LspCliRequest): ResolvedServerConfig {
+export function resolveServerConfig(
+  request: LspCliRequest,
+  workspace = process.cwd()
+): ResolvedServerConfig {
   const kind = request.lspServerKind ?? inferServerKind(request);
   const command = request.lspServerPath ?? defaultServerPath(kind);
-  const args = request.lspServerArgs ?? defaultServerArgs(kind);
+  const solution = request.solution === undefined
+    ? undefined
+    : resolveSolutionPath(workspace, request.solution);
+  const args = applySolutionArgs(
+    kind,
+    request.lspServerArgs ?? defaultServerArgs(kind),
+    solution
+  );
 
   return {
     kind,
     command,
     args,
-    resolvedCommand: resolveExecutable(command)
+    resolvedCommand: resolveExecutable(command),
+    ...(solution === undefined ? {} : { solution })
   };
 }
 
 function inferServerKind(request: LspCliRequest): LspServerKind {
+  if (request.solution !== undefined && request.lspServerPath === undefined) {
+    return "omnisharp";
+  }
+
   if (request.lspServerPath !== undefined) {
     return "custom";
   }
@@ -60,6 +77,53 @@ function defaultServerArgs(kind: LspServerKind): string[] {
     case "omnisharp":
       return ["--languageserver"];
   }
+}
+
+function resolveSolutionPath(workspace: string, solution: string): string {
+  const resolved = path.isAbsolute(solution)
+    ? path.normalize(solution)
+    : path.resolve(workspace, solution);
+
+  if (path.extname(resolved).toLowerCase() !== ".sln") {
+    throw new CliError(
+      "INVALID_REQUEST",
+      "solution must point to a .sln file."
+    );
+  }
+
+  return resolved;
+}
+
+function applySolutionArgs(
+  kind: LspServerKind,
+  args: string[],
+  solution: string | undefined
+): string[] {
+  if (solution === undefined) {
+    return args;
+  }
+
+  if (kind !== "omnisharp") {
+    throw new CliError(
+      "INVALID_REQUEST",
+      "solution is supported only with the omnisharp server kind."
+    );
+  }
+
+  if (hasOmniSharpSolutionArg(args)) {
+    throw new CliError(
+      "INVALID_REQUEST",
+      "solution cannot be combined with lspServerArgs that already include -s or --source."
+    );
+  }
+
+  return [...args, "-s", solution];
+}
+
+function hasOmniSharpSolutionArg(args: string[]): boolean {
+  return args.some(
+    (arg) => arg === "-s" || arg === "--source" || arg.startsWith("--source=")
+  );
 }
 
 export function createSessionConfig(

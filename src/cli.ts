@@ -48,7 +48,7 @@ async function main(): Promise<void> {
       workspace: request.workspace,
       file: request.file
     });
-    const server = resolveServerConfig(request);
+    const server = resolveServerConfig(request, workspace);
     const session = createSessionConfig(workspace, server);
     const daemonResponse = await sendRequestToDaemon(session, request);
     retried = daemonResponse.retried;
