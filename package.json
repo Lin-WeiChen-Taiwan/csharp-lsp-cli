@@ -1,6 +1,6 @@
 {
   "name": "csharp-lsp-cli",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": true,
   "type": "module",
   "description": "Single-request CLI bridge to a long-lived C# LSP daemon.",

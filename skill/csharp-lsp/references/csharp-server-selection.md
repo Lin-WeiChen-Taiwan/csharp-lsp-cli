@@ -59,6 +59,9 @@ one solution. The path may be absolute or workspace-relative:
 
 The CLI adds `-s <solution>` to the OmniSharp command line. If `solution` is
 present without `lspServerKind`, the CLI infers `omnisharp`.
+If `workspace` is omitted, the CLI discovers it from `file`, then from
+`solution` by walking up to `.git`; without `.git`, the `.sln` directory becomes
+the workspace.
 
 Legacy .NET Framework projects on Windows usually need .NET Framework runtime
 and Visual Studio Build Tools/MSBuild. On macOS/Linux, legacy projects may need

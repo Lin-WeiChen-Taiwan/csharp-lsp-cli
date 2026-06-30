@@ -56,17 +56,21 @@ Default to `csharp-ls`. Override only when project requirements make it useful:
 ```
 
 For OmniSharp on a workspace with multiple solution files, specify the exact
-solution:
+solution. `workspace` may be omitted if `solution` is absolute or relative to
+the current working directory:
 
 ```json
 {
   "version": 1,
   "operation": "status",
-  "workspace": "C:/repo/app",
   "lspServerKind": "omnisharp",
-  "solution": "App.sln"
+  "solution": "C:/repo/app/App.sln"
 }
 ```
+
+When `workspace` is omitted, the CLI discovers it from `file`, then from
+`solution` by walking up to `.git`; if no `.git` exists, it uses the `.sln`
+directory.
 
 Read `references/csharp-server-selection.md` before changing server defaults,
 working on legacy .NET Framework projects, or troubleshooting server startup.

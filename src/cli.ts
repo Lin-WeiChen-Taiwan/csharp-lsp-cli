@@ -46,7 +46,8 @@ async function main(): Promise<void> {
     const request = parseRequest(input);
     const workspace = discoverWorkspace(process.cwd(), {
       workspace: request.workspace,
-      file: request.file
+      file: request.file,
+      solution: request.solution
     });
     const server = resolveServerConfig(request, workspace);
     const session = createSessionConfig(workspace, server);

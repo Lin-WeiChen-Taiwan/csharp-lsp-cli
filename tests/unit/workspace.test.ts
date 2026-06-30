@@ -12,7 +12,13 @@ describe("workspace discovery", () => {
     fs.mkdirSync(cwd);
     fs.mkdirSync(explicit);
 
-    expect(discoverWorkspace(cwd, { workspace: explicit, file: "x.cs" })).toBe(explicit);
+    expect(
+      discoverWorkspace(cwd, {
+        workspace: explicit,
+        file: "x.cs",
+        solution: "App.sln"
+      })
+    ).toBe(explicit);
   });
 
   it("walks from target file to nearest .git", () => {
@@ -28,5 +34,25 @@ describe("workspace discovery", () => {
   it("falls back to cwd", () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "csharp-lsp-workspace-"));
     expect(discoverWorkspace(root, {})).toBe(root);
+  });
+
+  it("walks from solution to nearest .git when workspace is omitted", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "csharp-lsp-workspace-"));
+    fs.mkdirSync(path.join(root, ".git"));
+    fs.mkdirSync(path.join(root, "solutions"), { recursive: true });
+    const solution = path.join(root, "solutions", "App.sln");
+    fs.writeFileSync(solution, "\n");
+
+    expect(discoverWorkspace(os.tmpdir(), { solution })).toBe(root);
+  });
+
+  it("falls back to solution directory when no .git exists", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "csharp-lsp-workspace-"));
+    const solutionDir = path.join(root, "solutions");
+    fs.mkdirSync(solutionDir, { recursive: true });
+
+    expect(discoverWorkspace(root, { solution: "solutions/App.sln" })).toBe(
+      solutionDir
+    );
   });
 });

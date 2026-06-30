@@ -50,13 +50,15 @@ passing `solution`. The path can be absolute or workspace-relative:
 {
   "version": 1,
   "operation": "status",
-  "workspace": "C:/repo/app",
   "lspServerKind": "omnisharp",
-  "solution": "App.sln"
+  "solution": "C:/repo/app/App.sln"
 }
 ```
 
 The OmniSharp preset starts the server with `--languageserver -s <solution>`.
+When `workspace` is omitted, the CLI discovers it from `file`, then from
+`solution` by walking up to `.git`; if no `.git` exists, it uses the `.sln`
+directory.
 
 ## Request operations
 
