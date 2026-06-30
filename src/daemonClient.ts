@@ -19,6 +19,11 @@ interface DaemonIpcResponse {
   retried: boolean;
 }
 
+type TrySendResult =
+  | { kind: "response"; response: DaemonIpcResponse }
+  | { kind: "unavailable" }
+  | { kind: "timeout" };
+
 export interface DaemonClientResponse extends DaemonIpcResponse {
   session: string;
 }
@@ -28,22 +33,38 @@ export async function sendRequestToDaemon(
   request: LspCliRequest
 ): Promise<DaemonClientResponse> {
   const socketPath = getSocketPath(session.hash);
-  const existing = await trySend(socketPath, request, 1_000);
-  if (existing !== undefined) {
-    return { ...existing, session: session.hash };
+  const responseTimeoutMs = daemonResponseTimeoutMs(request);
+  const existing = await trySend(socketPath, request, responseTimeoutMs);
+  if (existing.kind === "response") {
+    return { ...existing.response, session: session.hash };
+  }
+  if (existing.kind === "timeout") {
+    throw new CliError("DAEMON_REQUEST_TIMEOUT", "daemon did not respond in time.", {
+      socketPath,
+      timeoutMs: responseTimeoutMs
+    });
   }
 
   await startDaemon(socketPath, session);
 
-  const deadline = Date.now() + 65_000;
+  const deadline = Date.now() + daemonStartupDeadlineMs(request, session);
   let lastError: unknown;
   while (Date.now() < deadline) {
-    const response = await trySend(socketPath, request, 2_000).catch((error) => {
+    const remainingMs = Math.max(1_000, deadline - Date.now());
+    const response = await trySend(
+      socketPath,
+      request,
+      Math.min(responseTimeoutMs, remainingMs)
+    ).catch((error) => {
       lastError = error;
-      return undefined;
+      return { kind: "unavailable" } as TrySendResult;
     });
-    if (response !== undefined) {
-      return { ...response, session: session.hash };
+    if (response.kind === "response") {
+      return { ...response.response, session: session.hash };
+    }
+    if (response.kind === "timeout") {
+      lastError = `timed out after ${responseTimeoutMs}ms`;
+      break;
     }
     await delay(100);
   }
@@ -52,6 +73,17 @@ export async function sendRequestToDaemon(
     socketPath,
     lastError: lastError instanceof Error ? lastError.message : String(lastError)
   });
+}
+
+export function daemonResponseTimeoutMs(request: LspCliRequest): number {
+  return (request.timeoutMs ?? 30_000) + 5_000;
+}
+
+export function daemonStartupDeadlineMs(
+  request: LspCliRequest,
+  session: SessionConfig
+): number {
+  return session.initializeTimeoutMs + daemonResponseTimeoutMs(request);
 }
 
 async function startDaemon(
@@ -85,18 +117,18 @@ async function trySend(
   socketPath: string,
   request: LspCliRequest,
   timeoutMs: number
-): Promise<DaemonIpcResponse | undefined> {
+): Promise<TrySendResult> {
   return new Promise((resolve, reject) => {
     const socket = net.createConnection(socketPath);
     let done = false;
     let buffer = "";
 
     const timeout = setTimeout(() => {
-      finish(undefined);
+      finish({ kind: "timeout" });
       socket.destroy();
     }, timeoutMs);
 
-    const finish = (response: DaemonIpcResponse | undefined): void => {
+    const finish = (response: TrySendResult): void => {
       if (done) {
         return;
       }
@@ -118,7 +150,7 @@ async function trySend(
         "code" in error &&
         (error.code === "ENOENT" || error.code === "ECONNREFUSED")
       ) {
-        finish(undefined);
+        finish({ kind: "unavailable" });
         return;
       }
       clearTimeout(timeout);
@@ -132,10 +164,13 @@ async function trySend(
       try {
         const line = buffer.trim();
         if (line.length === 0) {
-          finish(undefined);
+          finish({ kind: "unavailable" });
           return;
         }
-        finish(JSON.parse(line) as DaemonIpcResponse);
+        finish({
+          kind: "response",
+          response: JSON.parse(line) as DaemonIpcResponse
+        });
       } catch (error) {
         clearTimeout(timeout);
         reject(error);

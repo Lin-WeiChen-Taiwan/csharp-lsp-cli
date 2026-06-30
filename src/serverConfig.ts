@@ -17,17 +17,32 @@ export interface SessionConfig {
   hash: string;
   workspace: string;
   server: ResolvedServerConfig;
+  initializeTimeoutMs: number;
 }
+
+export interface CreateSessionConfigOptions {
+  timeoutMs?: number;
+}
+
+export interface ResolveServerConfigOptions {
+  solutionBase?: string;
+}
+
+export const defaultInitializeTimeoutMs = 60_000;
+export const defaultOmniSharpInitializeTimeoutMs = 180_000;
 
 export function resolveServerConfig(
   request: LspCliRequest,
-  workspace = process.cwd()
+  workspace = process.cwd(),
+  options: ResolveServerConfigOptions = {}
 ): ResolvedServerConfig {
   const kind = request.lspServerKind ?? inferServerKind(request);
   const command = request.lspServerPath ?? defaultServerPath(kind);
+  const solutionBase =
+    request.workspace === undefined ? options.solutionBase ?? workspace : workspace;
   const solution = request.solution === undefined
     ? undefined
-    : resolveSolutionPath(workspace, request.solution);
+    : resolveSolutionPath(solutionBase, request.solution);
   const args = applySolutionArgs(
     kind,
     request.lspServerArgs ?? defaultServerArgs(kind),
@@ -128,7 +143,8 @@ function hasOmniSharpSolutionArg(args: string[]): boolean {
 
 export function createSessionConfig(
   workspace: string,
-  server: ResolvedServerConfig
+  server: ResolvedServerConfig,
+  options: CreateSessionConfigOptions = {}
 ): SessionConfig {
   const hashInput = JSON.stringify({
     workspace: path.resolve(workspace),
@@ -139,8 +155,20 @@ export function createSessionConfig(
   return {
     hash,
     workspace: path.resolve(workspace),
-    server
+    server,
+    initializeTimeoutMs: initializeTimeoutMsFor(server, options.timeoutMs)
   };
+}
+
+function initializeTimeoutMsFor(
+  server: ResolvedServerConfig,
+  requestTimeoutMs: number | undefined
+): number {
+  const base =
+    server.kind === "omnisharp"
+      ? defaultOmniSharpInitializeTimeoutMs
+      : defaultInitializeTimeoutMs;
+  return requestTimeoutMs === undefined ? base : Math.max(base, requestTimeoutMs);
 }
 
 export function getStateDir(): string {

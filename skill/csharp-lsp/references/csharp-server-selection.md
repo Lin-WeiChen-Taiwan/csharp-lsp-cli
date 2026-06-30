@@ -48,12 +48,15 @@ Typical request fields:
 ```
 
 For repos with multiple `.sln` files, pass `solution` to force OmniSharp to load
-one solution. The path may be absolute or workspace-relative:
+one solution. The path may be absolute. If `workspace` is set, relative
+solutions are resolved from that workspace; otherwise they are resolved from the
+CLI current working directory:
 
 ```json
 {
   "lspServerKind": "omnisharp",
-  "solution": "LegacyApp.sln"
+  "solution": "C:/repo/legacy/LegacyApp.sln",
+  "timeoutMs": 180000
 }
 ```
 
@@ -66,6 +69,24 @@ the workspace.
 Legacy .NET Framework projects on Windows usually need .NET Framework runtime
 and Visual Studio Build Tools/MSBuild. On macOS/Linux, legacy projects may need
 Mono with MSBuild.
+
+OmniSharp can take a while to initialize old-style MSBuild projects. Use
+`timeoutMs` around 180000 for the first request against a legacy solution, and
+prefer an absolute `solution` path when no explicit `workspace` is provided.
+
+If multiple Visual Studio/MSBuild versions are installed and OmniSharp chooses
+one that cannot load the project, add `omnisharp.json` beside the `.sln`:
+
+```json
+{
+  "MSBuild": {
+    "MSBuildOverride": {
+      "Name": "Visual Studio 2022",
+      "MSBuildPath": "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin"
+    }
+  }
+}
+```
 
 ## Custom Server
 

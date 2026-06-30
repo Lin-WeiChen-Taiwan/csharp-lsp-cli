@@ -43,7 +43,6 @@ interface InitializeResult {
 }
 
 const defaultRequestTimeoutMs = 30_000;
-const defaultInitializeTimeoutMs = 60_000;
 const defaultDocumentIdleMs = 10 * 60_000;
 
 export class LspSession {
@@ -121,7 +120,7 @@ export class LspSession {
           }
         ]
       }),
-      defaultInitializeTimeoutMs,
+      this.config.initializeTimeoutMs,
       "INITIALIZE_TIMEOUT"
     );
     this.capabilities = initializeResult.capabilities ?? {};

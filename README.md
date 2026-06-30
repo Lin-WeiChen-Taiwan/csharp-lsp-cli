@@ -44,14 +44,17 @@ Useful presets:
 - `omnisharp`: legacy fallback using `--languageserver`.
 
 For workspaces with multiple solutions, load one solution with OmniSharp by
-passing `solution`. The path can be absolute or workspace-relative:
+passing `solution`. The path can be absolute. If `workspace` is set, relative
+solutions are resolved from `workspace`; otherwise they are resolved from the
+CLI current working directory:
 
 ```json
 {
   "version": 1,
   "operation": "status",
   "lspServerKind": "omnisharp",
-  "solution": "C:/repo/app/App.sln"
+  "solution": "C:/repo/app/App.sln",
+  "timeoutMs": 180000
 }
 ```
 
@@ -59,6 +62,23 @@ The OmniSharp preset starts the server with `--languageserver -s <solution>`.
 When `workspace` is omitted, the CLI discovers it from `file`, then from
 `solution` by walking up to `.git`; if no `.git` exists, it uses the `.sln`
 directory.
+
+Legacy .NET Framework solutions can take longer to initialize than SDK-style
+projects, so the OmniSharp preset uses a longer initialize timeout by default.
+For large solutions, pass a larger `timeoutMs` on the first request. If
+OmniSharp selects an incompatible MSBuild installation, place an
+`omnisharp.json` beside the solution to pin a working MSBuild, for example:
+
+```json
+{
+  "MSBuild": {
+    "MSBuildOverride": {
+      "Name": "Visual Studio 2022",
+      "MSBuildPath": "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin"
+    }
+  }
+}
+```
 
 ## Request operations
 

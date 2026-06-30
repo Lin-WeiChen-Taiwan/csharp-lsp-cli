@@ -36,8 +36,8 @@ maybeDescribe("real C# fixture with csharp-ls", () => {
         version: 1,
         operation: "hover",
         file: "Program.cs",
-        line: 5,
-        character: 18,
+        line: 4,
+        character: 21,
         timeoutMs: 60_000
       });
       const symbols = await session.execute({
