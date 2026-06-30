@@ -70,23 +70,32 @@ Legacy .NET Framework projects on Windows usually need .NET Framework runtime
 and Visual Studio Build Tools/MSBuild. On macOS/Linux, legacy projects may need
 Mono with MSBuild.
 
+On Windows, the OmniSharp preset first checks
+`CSHARP_LSP_CLI_OMNISHARP_PATH`, then `C:\dev\omnisharp\OmniSharp.exe`, then
+falls back to `omnisharp` on PATH.
+
 OmniSharp can take a while to initialize old-style MSBuild projects. Use
 `timeoutMs` around 180000 for the first request against a legacy solution, and
 prefer an absolute `solution` path when no explicit `workspace` is provided.
 
-If multiple Visual Studio/MSBuild versions are installed and OmniSharp chooses
-one that cannot load the project, add `omnisharp.json` beside the `.sln`:
+The CLI automatically tries to pin Visual Studio 2022 MSBuild through
+OmniSharp's configuration environment variables. Override the MSBuild selection
+per request when needed:
 
 ```json
 {
-  "MSBuild": {
-    "MSBuildOverride": {
-      "Name": "Visual Studio 2022",
-      "MSBuildPath": "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin"
-    }
-  }
+  "lspServerKind": "omnisharp",
+  "solution": "C:/repo/legacy/LegacyApp.sln",
+  "omnisharpMsBuildPath": "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin",
+  "omnisharpMsBuildName": "Visual Studio Community 2022",
+  "timeoutMs": 180000
 }
 ```
+
+Set `omnisharpUseDefaultMsBuild` to `false` to let OmniSharp perform its own
+MSBuild discovery. The same defaults can also be supplied globally with
+`CSHARP_LSP_CLI_OMNISHARP_MSBUILD_PATH` and
+`CSHARP_LSP_CLI_OMNISHARP_MSBUILD_NAME`.
 
 ## Custom Server
 

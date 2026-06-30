@@ -76,9 +76,15 @@ directory.
 
 For legacy .NET Framework solutions, prefer an absolute `solution` path, keep
 `workspace` omitted when you want the CLI to derive it from the `.sln`, and pass
-`timeoutMs` around 180000 on the first request. If OmniSharp chooses the wrong
-MSBuild, add `omnisharp.json` beside the `.sln` to pin the Visual Studio/MSBuild
-installation.
+`timeoutMs` around 180000 on the first request.
+
+On Windows, the OmniSharp preset automatically checks
+`CSHARP_LSP_CLI_OMNISHARP_PATH`, then `C:\dev\omnisharp\OmniSharp.exe`, then
+`omnisharp` on PATH. It also tries to pin Visual Studio 2022 MSBuild through
+OmniSharp configuration environment variables. Override that per request with
+`omnisharpMsBuildPath` / `omnisharpMsBuildName`, or set
+`omnisharpUseDefaultMsBuild` to `false` when the project should use OmniSharp's
+own MSBuild discovery.
 
 Read `references/csharp-server-selection.md` before changing server defaults,
 working on legacy .NET Framework projects, or troubleshooting server startup.

@@ -32,6 +32,35 @@ describe("request schema", () => {
     expect(request.solution).toBe("App.sln");
   });
 
+  it("accepts OmniSharp MSBuild override options", () => {
+    const request = parseRequest(
+      JSON.stringify({
+        version: 1,
+        operation: "status",
+        lspServerKind: "omnisharp",
+        solution: "App.sln",
+        omnisharpMsBuildPath: "C:/MSBuild/Bin",
+        omnisharpMsBuildName: "Pinned MSBuild"
+      })
+    );
+
+    expect(request.omnisharpMsBuildPath).toBe("C:/MSBuild/Bin");
+    expect(request.omnisharpMsBuildName).toBe("Pinned MSBuild");
+  });
+
+  it("rejects OmniSharp MSBuild options for non-OmniSharp servers", () => {
+    expect(() =>
+      parseRequest(
+        JSON.stringify({
+          version: 1,
+          operation: "status",
+          lspServerKind: "csharp-ls",
+          omnisharpMsBuildPath: "C:/MSBuild/Bin"
+        })
+      )
+    ).toThrow(/require lspServerKind omnisharp/);
+  });
+
   it("rejects unknown fields", () => {
     expect(() =>
       parseRequest(

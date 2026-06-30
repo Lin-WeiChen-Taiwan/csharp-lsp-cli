@@ -85,6 +85,42 @@ describe("server config", () => {
     expect(resolveSessionTimeout(workspace, server, 240_000)).toBe(240_000);
   });
 
+  it("adds OmniSharp MSBuild override environment", () => {
+    const workspace = path.resolve("workspace");
+    const server = resolveServerConfig(
+      {
+        version: 1,
+        operation: "status",
+        lspServerKind: "omnisharp",
+        solution: "App.sln",
+        omnisharpMsBuildPath: "C:/MSBuild/Bin",
+        omnisharpMsBuildName: "Pinned MSBuild"
+      },
+      workspace
+    );
+
+    expect(server.env).toEqual({
+      OMNISHARP_MSBUILD__MSBUILDOVERRIDE__NAME: "Pinned MSBuild",
+      OMNISHARP_MSBUILD__MSBUILDOVERRIDE__MSBUILDPATH: path.resolve("C:/MSBuild/Bin")
+    });
+  });
+
+  it("can disable default OmniSharp MSBuild override", () => {
+    const workspace = path.resolve("workspace");
+    const server = resolveServerConfig(
+      {
+        version: 1,
+        operation: "status",
+        lspServerKind: "omnisharp",
+        solution: "App.sln",
+        omnisharpUseDefaultMsBuild: false
+      },
+      workspace
+    );
+
+    expect(server.env).toBeUndefined();
+  });
+
   it("preserves custom OmniSharp args and appends the solution", () => {
     const workspace = path.resolve("workspace");
     const server = resolveServerConfig(

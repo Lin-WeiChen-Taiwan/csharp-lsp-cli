@@ -63,22 +63,34 @@ When `workspace` is omitted, the CLI discovers it from `file`, then from
 `solution` by walking up to `.git`; if no `.git` exists, it uses the `.sln`
 directory.
 
+On Windows, the OmniSharp preset first checks
+`CSHARP_LSP_CLI_OMNISHARP_PATH`, then `C:\dev\omnisharp\OmniSharp.exe`, then
+falls back to `omnisharp` on `PATH`.
+
 Legacy .NET Framework solutions can take longer to initialize than SDK-style
 projects, so the OmniSharp preset uses a longer initialize timeout by default.
-For large solutions, pass a larger `timeoutMs` on the first request. If
-OmniSharp selects an incompatible MSBuild installation, place an
-`omnisharp.json` beside the solution to pin a working MSBuild, for example:
+For large solutions, pass a larger `timeoutMs` on the first request.
+
+For OmniSharp on Windows, the CLI automatically tries to pin Visual Studio 2022
+MSBuild through OmniSharp's configuration environment variables. Override it per
+request when needed:
 
 ```json
 {
-  "MSBuild": {
-    "MSBuildOverride": {
-      "Name": "Visual Studio 2022",
-      "MSBuildPath": "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin"
-    }
-  }
+  "version": 1,
+  "operation": "status",
+  "lspServerKind": "omnisharp",
+  "solution": "C:/repo/app/App.sln",
+  "omnisharpMsBuildPath": "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin",
+  "omnisharpMsBuildName": "Visual Studio Community 2022",
+  "timeoutMs": 180000
 }
 ```
+
+Set `omnisharpUseDefaultMsBuild` to `false` to disable the automatic VS2022
+MSBuild override. The same defaults can also be set with
+`CSHARP_LSP_CLI_OMNISHARP_MSBUILD_PATH` and
+`CSHARP_LSP_CLI_OMNISHARP_MSBUILD_NAME`.
 
 ## Request operations
 

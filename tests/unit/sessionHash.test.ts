@@ -68,4 +68,36 @@ describe("session hash", () => {
 
     expect(a.hash).not.toBe(b.hash);
   });
+
+  it("changes when OmniSharp MSBuild override changes", () => {
+    const workspace = "C:/repo/project";
+    const a = createSessionConfig(
+      workspace,
+      resolveServerConfig(
+        {
+          version: 1,
+          operation: "status",
+          lspServerKind: "omnisharp",
+          solution: "App.sln",
+          omnisharpMsBuildPath: "C:/MSBuild/A"
+        },
+        workspace
+      )
+    );
+    const b = createSessionConfig(
+      workspace,
+      resolveServerConfig(
+        {
+          version: 1,
+          operation: "status",
+          lspServerKind: "omnisharp",
+          solution: "App.sln",
+          omnisharpMsBuildPath: "C:/MSBuild/B"
+        },
+        workspace
+      )
+    );
+
+    expect(a.hash).not.toBe(b.hash);
+  });
 });

@@ -68,6 +68,10 @@ export class LspSession {
     this.crashed = false;
     const child = spawn(this.config.server.command, this.config.server.args, {
       cwd: this.config.workspace,
+      env: {
+        ...process.env,
+        ...(this.config.server.env ?? {})
+      },
       stdio: "pipe",
       windowsHide: true
     });

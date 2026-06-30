@@ -34,6 +34,9 @@ export const requestSchema = z
     lspServerPath: z.string().min(1).optional(),
     lspServerArgs: z.array(z.string()).optional(),
     lspServerKind: z.enum(lspServerKinds).optional(),
+    omnisharpMsBuildPath: z.string().min(1).optional(),
+    omnisharpMsBuildName: z.string().min(1).optional(),
+    omnisharpUseDefaultMsBuild: z.boolean().optional(),
     timeoutMs: z.number().int().positive().max(600_000).optional()
   })
   .strict();
@@ -125,6 +128,24 @@ export function validateOperationRequirements(request: LspCliRequest): void {
     throw new CliError(
       "INVALID_REQUEST",
       "custom lspServerKind requires lspServerPath."
+    );
+  }
+
+  const usesOmniSharpOptions =
+    request.omnisharpMsBuildPath !== undefined ||
+    request.omnisharpMsBuildName !== undefined ||
+    request.omnisharpUseDefaultMsBuild !== undefined;
+  const effectiveServerKind =
+    request.lspServerKind ??
+    (request.solution !== undefined && request.lspServerPath === undefined
+      ? "omnisharp"
+      : request.lspServerPath !== undefined
+        ? "custom"
+        : "csharp-ls");
+  if (usesOmniSharpOptions && effectiveServerKind !== "omnisharp") {
+    throw new CliError(
+      "INVALID_REQUEST",
+      "omnisharp MSBuild options require lspServerKind omnisharp."
     );
   }
 }

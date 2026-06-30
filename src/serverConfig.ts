@@ -10,6 +10,7 @@ export interface ResolvedServerConfig {
   command: string;
   args: string[];
   resolvedCommand: string;
+  env?: Record<string, string>;
   solution?: string;
 }
 
@@ -54,6 +55,7 @@ export function resolveServerConfig(
     command,
     args,
     resolvedCommand: resolveExecutable(command),
+    ...serverEnv(kind, request),
     ...(solution === undefined ? {} : { solution })
   };
 }
@@ -76,10 +78,36 @@ function defaultServerPath(kind: LspServerKind): string {
     case "roslyn":
       return "roslyn-language-server";
     case "omnisharp":
-      return "omnisharp";
+      return defaultOmniSharpPath();
     case "custom":
       return "csharp-ls";
   }
+}
+
+function defaultOmniSharpPath(): string {
+  const configured = process.env.CSHARP_LSP_CLI_OMNISHARP_PATH;
+  if (configured !== undefined && configured.length > 0) {
+    return configured;
+  }
+
+  for (const candidate of defaultWindowsOmniSharpPaths()) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  return "omnisharp";
+}
+
+function defaultWindowsOmniSharpPaths(): string[] {
+  if (process.platform !== "win32") {
+    return [];
+  }
+
+  return [
+    "C:\\dev\\omnisharp\\OmniSharp.exe",
+    "C:\\omnisharp\\OmniSharp.exe"
+  ];
 }
 
 function defaultServerArgs(kind: LspServerKind): string[] {
@@ -141,6 +169,82 @@ function hasOmniSharpSolutionArg(args: string[]): boolean {
   );
 }
 
+function serverEnv(
+  kind: LspServerKind,
+  request: LspCliRequest
+): { env: Record<string, string> } | Record<string, never> {
+  if (kind !== "omnisharp") {
+    return {};
+  }
+
+  const msBuild = resolveOmniSharpMsBuildOverride(request);
+  if (msBuild === undefined) {
+    return {};
+  }
+
+  return {
+    env: {
+      OMNISHARP_MSBUILD__MSBUILDOVERRIDE__NAME: msBuild.name,
+      OMNISHARP_MSBUILD__MSBUILDOVERRIDE__MSBUILDPATH: msBuild.path
+    }
+  };
+}
+
+function resolveOmniSharpMsBuildOverride(
+  request: LspCliRequest
+): { name: string; path: string } | undefined {
+  const requestPath = request.omnisharpMsBuildPath;
+  if (requestPath !== undefined) {
+    return {
+      name: request.omnisharpMsBuildName ?? "Configured MSBuild",
+      path: path.resolve(requestPath)
+    };
+  }
+
+  const envPath = process.env.CSHARP_LSP_CLI_OMNISHARP_MSBUILD_PATH;
+  if (envPath !== undefined && envPath.length > 0) {
+    return {
+      name:
+        process.env.CSHARP_LSP_CLI_OMNISHARP_MSBUILD_NAME ??
+        request.omnisharpMsBuildName ??
+        "Configured MSBuild",
+      path: path.resolve(envPath)
+    };
+  }
+
+  if (request.omnisharpUseDefaultMsBuild === false) {
+    return undefined;
+  }
+
+  const detected = detectWindowsVs2022MsBuild();
+  if (detected === undefined) {
+    return undefined;
+  }
+  return detected;
+}
+
+function detectWindowsVs2022MsBuild(): { name: string; path: string } | undefined {
+  if (process.platform !== "win32") {
+    return undefined;
+  }
+
+  for (const edition of ["Community", "Professional", "Enterprise", "BuildTools"]) {
+    const candidate = path.join(
+      "C:\\Program Files\\Microsoft Visual Studio\\2022",
+      edition,
+      "MSBuild\\Current\\Bin"
+    );
+    if (fs.existsSync(path.join(candidate, "MSBuild.exe"))) {
+      return {
+        name: `Visual Studio ${edition} 2022`,
+        path: candidate
+      };
+    }
+  }
+
+  return undefined;
+}
+
 export function createSessionConfig(
   workspace: string,
   server: ResolvedServerConfig,
@@ -149,7 +253,8 @@ export function createSessionConfig(
   const hashInput = JSON.stringify({
     workspace: path.resolve(workspace),
     lspServerPath: server.resolvedCommand,
-    lspServerArgs: server.args
+    lspServerArgs: server.args,
+    lspServerEnv: server.env ?? {}
   });
   const hash = createHash("sha256").update(hashInput).digest("hex").slice(0, 32);
   return {
