@@ -110,5 +110,6 @@ server.
 }
 ```
 
-The daemon session hash includes the resolved server path and args, so changing
-server selection creates a separate long-lived session.
+The daemon session hash includes the resolved workspace, server path, server
+args, and server environment overrides, so changing server selection, solution,
+or OmniSharp MSBuild override creates a separate long-lived session.

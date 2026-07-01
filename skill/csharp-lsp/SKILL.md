@@ -1,6 +1,6 @@
 ---
 name: csharp-lsp
-description: Use this skill when Codex needs language-intelligence queries for C# projects through csharp-lsp-cli, including go to definition, find references, hover, document symbols, workspace symbols, and diagnostics for SDK-style .NET projects, .NET Core projects, legacy .NET Framework projects, or mixed C# solutions.
+description: Use this skill when Codex needs C# language-intelligence queries through csharp-lsp-cli, including go to definition, find references, hover, document symbols, workspace symbols, diagnostics, and managing the long-lived LSP daemon session for SDK-style .NET, .NET Core, legacy .NET Framework, OmniSharp, Roslyn, csharp-ls, or mixed C# solutions.
 ---
 
 # C# LSP
@@ -17,6 +17,42 @@ printf '%s\n' '{"version":1,"operation":"definition","workspace":"C:/repo/app","
 ```
 
 Keep stderr available for human-readable logs. Do not parse stderr as data.
+
+## Session Rules
+
+Treat a session as one long-lived LSP server owned by a background daemon. Each
+CLI invocation sends exactly one JSON request, but requests reuse the same daemon
+when their session identity is the same.
+
+The session identity is derived from:
+
+- resolved `workspace`
+- resolved LSP server executable
+- LSP server args, including OmniSharp `-s <solution>`
+- LSP server environment overrides, including OmniSharp MSBuild override env
+
+These request fields do not create a new session: `operation`, `file`, `line`,
+`character`, `query`, `includeDeclaration`, and `timeoutMs`.
+
+Use the same session fields for every related request. For OmniSharp, repeat the
+same `lspServerKind`, `solution`, and any explicit `lspServerPath`,
+`lspServerArgs`, or `omnisharpMsBuildPath` fields on `definition`,
+`references`, `hover`, `status`, `restart`, and `stop`. If `solution` is omitted
+on a later request, the CLI may default back to `csharp-ls`, producing a
+different session.
+
+Prefer absolute `solution` paths for OmniSharp sessions. If using relative
+paths, run the CLI from the same current working directory each time. If using
+workspace-relative file paths, keep `workspace` stable and explicit.
+
+Use `status` to warm up or inspect a session, but the first real query can also
+start the daemon. Use `restart` when the LSP server loaded stale project state
+or after changing server/MSBuild configuration. Use `stop` when finished with a
+workspace/solution. Changing `workspace`, `solution`, server path, server args,
+or OmniSharp MSBuild override intentionally creates a separate session.
+
+The daemon manages document lifecycle. It sends `didOpen` before queries,
+`didChange` when disk content changes, and `didClose` after documents sit idle.
 
 ## Operations
 
