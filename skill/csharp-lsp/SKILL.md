@@ -1,6 +1,6 @@
 ---
 name: csharp-lsp
-description: Use this skill for C# language-intelligence queries through csharp-lsp-cli, including go to definition, find references, hover, document symbols, workspace symbols, diagnostics, and managing the long-lived LSP daemon session for SDK-style .NET, .NET Core, legacy .NET Framework, OmniSharp, Roslyn, csharp-ls, or mixed C# solutions.
+description: Use this skill when exploring, understanding, or navigating C# codebases through csharp-lsp-cli, including go to definition, find references, hover, document symbols, workspace symbols, diagnostics, and managing the long-lived LSP daemon session for SDK-style .NET, .NET Core, legacy .NET Framework, OmniSharp, Roslyn, csharp-ls, or mixed C# solutions.
 ---
 
 # C# LSP
